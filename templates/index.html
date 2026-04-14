@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Voice to Notes</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(to right, #4facfe, #6a11cb);
+}
+
+.dark-mode {
+    background: #121212;
+    color: white;
+}
+
+#box {
+    width: 80%;
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.dark-mode #box {
+    background: #1e1e1e;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.start { background: green; color: white; }
+.stop { background: red; color: white; }
+.download { background: blue; color: white; }
+.ai { background: purple; color: white; }
+.logout { background: black; color: white; }
+
+.output-box {
+    background: #f1f1f1;
+    padding: 15px;
+    border-radius: 10px;
+    min-height: 60px;
+    margin: 10px 0;
+
+    /* 👉 ADD THESE LINES */
+    max-height: 200px;
+    overflow-y: auto;
+
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+/* Scrollbar design */
+.output-box::-webkit-scrollbar {
+    width: 8px;
+}
+
+.output-box::-webkit-scrollbar-track {
+    background: #ddd;
+}
+
+.output-box::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.output-box::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+}
+
+.dark-mode .output-box {
+    background: #333;
+}
+
+@media(max-width: 600px) {
+    #box {
+        width: 95%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="box">
+
+<h1>🎤 VOICE TO NOTES</h1>
+
+<button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+<a href="/logout"><button class="logout">Logout</button></a>
+
+<br><br>
+
+<select id="lang">
+    <option value="en-US">English</option>
+    <option value="te-IN">Telugu</option>
+</select>
+
+<br><br>
+
+<button class="start" onclick="startListening()">Start</button>
+<button class="stop" onclick="stopListening()">Stop</button>
+
+<p id="status"></p>
+
+<h3>Recognized Text</h3>
+<div class="output-box" id="output"></div>
+
+<h3>Summary</h3>
+<div class="output-box" id="summary"></div>
+
+<!-- ✅ Summary PDF -->
+<button class="download" onclick="downloadSummaryPDF()">Download Summary PDF</button>
+
+<!-- 🤖 AI -->
+<button class="ai" onclick="getAIInfo()">✨ Smart AI Explanation</button>
+
+<h3>AI Explanation</h3>
+<div class="output-box" id="aiOutput"></div>
+
+<!-- ✅ AI PDF -->
+<button class="download" onclick="downloadAIPDF()">Download AI PDF</button>
+
+<!-- 📥 OTHER DOWNLOADS -->
+<button class="download" onclick="downloadTXT()">Download TXT</button>
+<button class="download" onclick="downloadPDF()">Download PDF</button>
+
+</div>
+
+<script>
+let recognition;
+let finalText = "";
+
+// 🎤 START
+function startListening() {
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+    recognition.lang = document.getElementById("lang").value;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    finalText = "";
+
+    recognition.start();
+    document.getElementById("status").innerText = "🎤 Listening...";
+
+    recognition.onresult = function(event) {
+        let interim = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            let text = event.results[i][0].transcript;
+
+            if (event.results[i].isFinal) {
+                finalText += text + " ";
+            } else {
+                interim += text;
+            }
+        }
+
+        document.getElementById("output").innerText = finalText + interim;
+    };
+}
+
+// 🛑 STOP
+function stopListening() {
+    recognition.stop();
+    document.getElementById("status").innerText = "Stopped";
+
+    fetch("/summarize", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ text: finalText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("summary").innerText = data.summary;
+    })
+    .catch(() => {
+        document.getElementById("summary").innerText = "Error generating summary";
+    });
+}
+
+// 🤖 AI
+function getAIInfo() {
+    fetch("/ai-info", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ text: finalText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("aiOutput").innerText = data.info;
+    });
+}
+
+// 📄 TXT
+function downloadTXT() {
+    let text = document.getElementById("output").innerText;
+    let summary = document.getElementById("summary").innerText;
+
+    let content = "Text:\n" + text + "\n\nSummary:\n" + summary;
+
+    let blob = new Blob([content], {type: "text/plain"});
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "notes.txt";
+    a.click();
+}
+
+// 📑 FULL PDF
+async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    let text = document.getElementById("output").innerText;
+    let summary = document.getElementById("summary").innerText;
+
+    let content = "Text:\n" + text + "\n\nSummary:\n" + summary;
+
+    let lines = doc.splitTextToSize(content, 180);
+
+    doc.text("Voice Notes", 10, 10);
+    doc.text(lines, 10, 20);
+
+    doc.save("notes.pdf");
+}
+
+// ✅ SUMMARY PDF (TEXT + SUMMARY)
+function downloadSummaryPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    let text = document.getElementById("output").innerText;
+    let summary = document.getElementById("summary").innerText;
+
+    let content = "Recognized Text:\n\n" + text + "\n\nSummary:\n\n" + summary;
+
+    let lines = doc.splitTextToSize(content, 180);
+
+    doc.text("Voice Notes", 10, 10);
+    doc.text(lines, 10, 20);
+
+    doc.save("summary_notes.pdf");
+}
+
+// ✅ AI PDF (ONLY AI TEXT)
+function downloadAIPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    let aiText = document.getElementById("aiOutput").innerText;
+
+    if (!aiText.trim()) {
+        alert("No AI explanation available!");
+        return;
+    }
+
+    let lines = doc.splitTextToSize(aiText, 180);
+
+    doc.text("AI Explanation", 10, 10);
+    doc.text(lines, 10, 20);
+
+    doc.save("ai_explanation.pdf");
+}
+
+// 🌙 DARK MODE
+if(localStorage.getItem("darkMode") === "on"){
+    document.body.classList.add("dark-mode");
+}
+
+function toggleDarkMode(){
+    document.body.classList.toggle("dark-mode");
+
+    if(document.body.classList.contains("dark-mode")){
+        localStorage.setItem("darkMode","on");
+    } else {
+        localStorage.setItem("darkMode","off");
+    }
+}
+</script>
+
+</body>
+</html>

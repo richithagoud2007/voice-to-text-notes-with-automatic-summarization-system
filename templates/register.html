@@ -1,0 +1,102 @@
+<!DOCTYPE html><html>
+<head>
+<title>Register</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to right, #ff758c, #ff7eb3);
+    transition: 0.3s;
+}
+
+/* 🌙 Dark Mode */
+.dark-mode {
+    background: #121212;
+    color: white;
+}
+
+/* Card Box */
+.box {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.3);
+}
+
+.dark-mode .box {
+    background: #1e1e1e;
+}
+
+/* Inputs */
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* Button */
+button {
+    padding: 10px;
+    width: 95%;
+    border: none;
+    border-radius: 8px;
+    background: #ff758c;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #e85d75;
+}
+
+/* Toggle */
+.toggle {
+    margin-top: 10px;
+    background: black;
+}
+
+/* Mobile */
+@media(max-width: 500px) {
+    .box {
+        width: 95%;
+    }
+}
+</style></head><body><div class="box"><h1>📝 Register</h1>
+
+<!-- 🌙 Dark Mode -->
+<button class="toggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+
+<form method="POST">
+    <input name="username" placeholder="Create Username" required><br>
+    <input name="password" type="password" placeholder="Create Password" required><br>
+    <button type="submit">Register</button>
+</form>
+
+<p>Already have an account? <a href="/login">Login</a></p>
+
+</div><script>
+// 🌙 Dark mode with memory
+if(localStorage.getItem("darkMode") === "on"){
+    document.body.classList.add("dark-mode");
+}
+
+function toggleDarkMode(){
+    document.body.classList.toggle("dark-mode");
+
+    if(document.body.classList.contains("dark-mode")){
+        localStorage.setItem("darkMode","on");
+    } else {
+        localStorage.setItem("darkMode","off");
+    }
+}
+</script></body>
+</html>
