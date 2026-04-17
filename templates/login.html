@@ -1,6 +1,11 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html>
 <head>
-<title>Login</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+<title>Login</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -37,9 +42,15 @@ body {
 input {
     width: 90%;
     padding: 10px;
-    margin: 10px;
+    margin: 10px 0;
     border-radius: 8px;
     border: 1px solid #ccc;
+    outline: none;
+}
+
+/* Focus effect */
+input:focus {
+    border-color: #667eea;
 }
 
 /* Buttons */
@@ -52,6 +63,7 @@ button {
     color: white;
     cursor: pointer;
     font-size: 16px;
+    margin-top: 10px;
 }
 
 button:hover {
@@ -60,8 +72,17 @@ button:hover {
 
 /* Toggle button */
 .toggle {
-    margin-top: 10px;
     background: black;
+}
+
+/* Register link */
+a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 /* Mobile */
@@ -70,20 +91,29 @@ button:hover {
         width: 95%;
     }
 }
-</style></head><body><div class="box"><h1>🔐 Login</h1>
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>🔐 Login</h1>
 
 <!-- 🌙 Dark Mode -->
 <button class="toggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
 
 <form method="POST">
-    <input name="username" placeholder="Username" required><br>
-    <input name="password" type="password" placeholder="Password" required><br>
+    <input name="username" placeholder="Username" required>
+    <input name="password" type="password" placeholder="Password" required>
     <button type="submit">Login</button>
 </form>
 
 <p>New user? <a href="/register">Register</a></p>
 
-</div><script>
+</div>
+
+<script>
 // 🌙 Dark mode with memory
 if(localStorage.getItem("darkMode") === "on"){
     document.body.classList.add("dark-mode");
@@ -98,5 +128,7 @@ function toggleDarkMode(){
         localStorage.setItem("darkMode","off");
     }
 }
-</script></body>
-</html>p
+</script>
+
+</body>
+</html>

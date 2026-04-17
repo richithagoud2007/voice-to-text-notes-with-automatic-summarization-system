@@ -2,6 +2,12 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from sumy.summarizers.lsa import LsaSummarizer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
+import nltk
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -9,23 +15,32 @@ app.secret_key = "secret123"
 users = {}
 notes_history = {}
 
-# 🔹 Summarization
+# 🔹 Summarization (SAFE VERSION)
 def summarize_text(text):
-    parser = PlaintextParser.from_string(text, Tokenizer("english"))
-    summarizer = LsaSummarizer()
-    summary = summarizer(parser.document, 2)
-    return " ".join([str(sentence) for sentence in summary])
+    try:
+        parser = PlaintextParser.from_string(text, Tokenizer("english"))
+        summarizer = LsaSummarizer()
+        summary = summarizer(parser.document, 2)
+        result = " ".join([str(sentence) for sentence in summary])
 
-# 🔹 ✅ UPDATED AI FUNCTION (SMART OUTPUT)
+        # ✅ fallback if empty
+        if not result.strip():
+            return "Summary not available"
+
+        return result
+
+    except Exception as e:
+        print("Summarization Error:", e)
+        return "Summary not available"
+
+# 🔹 AI FUNCTION (UNCHANGED)
 def generate_ai_info(text):
     if not text.strip():
         return "No text provided."
 
-    # Split into sentences
     sentences = text.split(".")
     key_points = [s.strip() for s in sentences if len(s.strip()) > 20][:3]
 
-    # Build structured response
     result = "📌 Key Points:\n"
     for i, point in enumerate(key_points, 1):
         result += f"{i}. {point}\n"
@@ -79,28 +94,32 @@ def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
 
-# 🔹 Summarize API
+# 🔹 Summarize API (SAFE)
 @app.route("/summarize", methods=["POST"])
 def summarize():
-    data = request.get_json()
-    text = data.get("text", "")
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
 
-    if not text.strip():
-        return jsonify({"summary": "No text provided"})
+        if not text.strip():
+            return jsonify({"summary": "No text provided"})
 
-    summary = summarize_text(text)
+        summary = summarize_text(text)
 
-    # Save history safely
-    user = session.get("user")
-    if user:
-        notes_history.setdefault(user, []).append({
-            "text": text,
-            "summary": summary
-        })
+        user = session.get("user")
+        if user:
+            notes_history.setdefault(user, []).append({
+                "text": text,
+                "summary": summary
+            })
 
-    return jsonify({"summary": summary})
+        return jsonify({"summary": summary})
 
-# 🔹 AI Info API (UNCHANGED ROUTE, BETTER OUTPUT)
+    except Exception as e:
+        print("API Error:", e)
+        return jsonify({"summary": "Error generating summary"})
+
+# 🔹 AI Info API
 @app.route("/ai-info", methods=["POST"])
 def ai_info():
     data = request.get_json()
