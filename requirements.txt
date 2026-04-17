@@ -1,5 +1,4 @@
 flask
 speechrecognition
-pyaudio
 sumy
 nltk
