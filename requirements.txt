@@ -1,4 +1,5 @@
 flask
+gunicorn
 speechrecognition
 sumy
 nltk
