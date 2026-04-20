@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+import speech_recognition as sr
 from sumy.summarizers.lsa import LsaSummarizer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
+
 import nltk
 
+# ✅ Ensure punkt is available (important for deployment)
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
@@ -15,25 +18,21 @@ app.secret_key = "secret123"
 users = {}
 notes_history = {}
 
-# 🔹 Summarization (SAFE VERSION)
-def summarize_text(text):
-    try:
-        parser = PlaintextParser.from_string(text, Tokenizer("english"))
-        summarizer = LsaSummarizer()
-        summary = summarizer(parser.document, 2)
-        result = " ".join([str(sentence) for sentence in summary])
+# 🔹 Summarization
+def generate_summary(text):
+    if not text.strip():
+        return "No text to summarize"
 
-        # ✅ fallback if empty
-        if not result.strip():
-            return "Summary not available"
+    parser = PlaintextParser.from_string(text, Tokenizer("english"))
+    summarizer = LsaSummarizer()
 
-        return result
+    summary = summarizer(parser.document, 2)
 
-    except Exception as e:
-        print("Summarization Error:", e)
-        return "Summary not available"
+    result = " ".join(str(sentence) for sentence in summary)
 
-# 🔹 AI FUNCTION (UNCHANGED)
+    return result if result else "Summary not available"
+
+# 🔹 AI FUNCTION
 def generate_ai_info(text):
     if not text.strip():
         return "No text provided."
@@ -54,11 +53,9 @@ def generate_ai_info(text):
     return result
 
 # 🔹 Home
-@app.route("/")
-def home():
-    if "user" in session:
-        return render_template("index.html")
-    return redirect(url_for("login"))
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
 
 # 🔹 Login
 @app.route("/login", methods=["GET", "POST"])
@@ -69,7 +66,7 @@ def login():
 
         if username in users and users[username] == password:
             session["user"] = username
-            return redirect(url_for("home"))
+            return redirect(url_for("index"))
         else:
             return "Invalid credentials"
 
@@ -94,7 +91,7 @@ def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
 
-# 🔹 Summarize API (SAFE)
+# 🔹 ✅ Summarize API (FIXED)
 @app.route("/summarize", methods=["POST"])
 def summarize():
     try:
@@ -104,7 +101,8 @@ def summarize():
         if not text.strip():
             return jsonify({"summary": "No text provided"})
 
-        summary = summarize_text(text)
+        # ✅ FIXED FUNCTION NAME
+        summary = generate_summary(text)
 
         user = session.get("user")
         if user:
