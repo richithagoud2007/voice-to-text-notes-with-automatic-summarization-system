@@ -144,19 +144,24 @@ button {
 
 </div>
 
+
 <script>
-let recognition;
+let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 let finalText = "";
+let isListening = false;
 
 // 🎤 START
 function startListening() {
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    if (isListening) return;
+
+    isListening = true;
 
     recognition.lang = document.getElementById("lang").value;
     recognition.continuous = true;
     recognition.interimResults = true;
 
     finalText = "";
+    document.getElementById("output").innerText = "";
 
     recognition.start();
     document.getElementById("status").innerText = "🎤 Listening...";
@@ -180,8 +185,14 @@ function startListening() {
 
 // 🛑 STOP
 function stopListening() {
+    isListening = false;
     recognition.stop();
     document.getElementById("status").innerText = "Stopped";
+
+    if (!finalText.trim()) {
+        document.getElementById("summary").innerText = "No text to summarize";
+        return;
+    }
 
     fetch("/summarize", {
         method: "POST",
@@ -197,8 +208,20 @@ function stopListening() {
     });
 }
 
+// 🔁 PREVENT AUTO STOP (MAIN FIX)
+recognition.onend = function() {
+    if (isListening) {
+        recognition.start(); // auto restart
+    }
+};
+
 // 🤖 AI
 function getAIInfo() {
+    if (!finalText.trim()) {
+        document.getElementById("aiOutput").innerText = "No text available";
+        return;
+    }
+
     fetch("/ai-info", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -242,7 +265,7 @@ async function downloadPDF() {
     doc.save("notes.pdf");
 }
 
-// ✅ SUMMARY PDF (TEXT + SUMMARY)
+// ✅ SUMMARY PDF
 function downloadSummaryPDF() {
     const { jsPDF } = window.jspdf;
     let doc = new jsPDF();
@@ -260,7 +283,7 @@ function downloadSummaryPDF() {
     doc.save("summary_notes.pdf");
 }
 
-// ✅ AI PDF (ONLY AI TEXT)
+// ✅ AI PDF
 function downloadAIPDF() {
     const { jsPDF } = window.jspdf;
     let doc = new jsPDF();
