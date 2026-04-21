@@ -7,18 +7,24 @@ from sumy.nlp.tokenizers import Tokenizer
 import nltk
 import os
 
-# ✅ FIX: Proper NLTK setup for Render (persistent path)
+# ✅ Force NLTK to use a persistent folder
 nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
 
 if not os.path.exists(nltk_data_path):
     os.makedirs(nltk_data_path)
 
-# Add path so NLTK can find it
 nltk.data.path.append(nltk_data_path)
 
-# Download ONLY if not already present
+# ✅ Download required tokenizer files
 try:
     nltk.data.find('tokenizers/punkt')
+except LookupError:
+    print("Downloading punkt...")
+    nltk.download('punkt', download_dir=nltk_data_path)
+
+# 🔥 EXTRA FIX (important for some environments)
+try:
+    nltk.data.find('tokenizers/punkt/english.pickle')
 except LookupError:
     nltk.download('punkt', download_dir=nltk_data_path)
 
@@ -107,10 +113,14 @@ def summarize():
         data = request.get_json()
         text = data.get("text", "")
 
+        print("Received text:", text)  # ✅ DEBUG
+
         if not text.strip():
             return jsonify({"summary": "No text provided"})
 
         summary = generate_summary(text)
+
+        print("Generated summary:", summary)  # ✅ DEBUG
 
         user = session.get("user")
         if user:
@@ -122,9 +132,8 @@ def summarize():
         return jsonify({"summary": summary})
 
     except Exception as e:
-        print("API Error:", e)
+        print("🔥 FULL ERROR:", str(e))  # ✅ IMPORTANT
         return jsonify({"summary": "Error generating summary"})
-
 # 🔹 AI Info API
 @app.route("/ai-info", methods=["POST"])
 def ai_info():
