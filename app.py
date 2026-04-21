@@ -5,12 +5,22 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 
 import nltk
+import os
 
-# ✅ Ensure punkt is available (important for deployment)
+# ✅ FIX: Proper NLTK setup for Render (persistent path)
+nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
+
+if not os.path.exists(nltk_data_path):
+    os.makedirs(nltk_data_path)
+
+# Add path so NLTK can find it
+nltk.data.path.append(nltk_data_path)
+
+# Download ONLY if not already present
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
-    nltk.download('punkt')
+    nltk.download('punkt', download_dir=nltk_data_path)
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -27,7 +37,6 @@ def generate_summary(text):
     summarizer = LsaSummarizer()
 
     summary = summarizer(parser.document, 2)
-
     result = " ".join(str(sentence) for sentence in summary)
 
     return result if result else "Summary not available"
@@ -101,7 +110,6 @@ def summarize():
         if not text.strip():
             return jsonify({"summary": "No text provided"})
 
-        # ✅ FIXED FUNCTION NAME
         summary = generate_summary(text)
 
         user = session.get("user")
