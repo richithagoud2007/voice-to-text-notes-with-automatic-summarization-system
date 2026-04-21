@@ -194,18 +194,22 @@ function stopListening() {
         return;
     }
 
-    fetch("/summarize", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ text: finalText })
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("summary").innerText = data.summary;
-    })
-    .catch(() => {
-        document.getElementById("summary").innerText = "Error generating summary";
-    });
+    document.getElementById("summary").innerText = "Generating summary...";
+
+    setTimeout(() => {
+        fetch("/summarize", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ text: finalText })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("summary").innerText = data.summary;
+        })
+        .catch(() => {
+            document.getElementById("summary").innerText = "Error generating summary";
+        });
+    }, 3000);
 }
 
 // 🔁 PREVENT AUTO STOP (MAIN FIX)
