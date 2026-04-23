@@ -4,6 +4,7 @@ from sumy.summarizers.lsa import LsaSummarizer
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 
+from flask import Flask
 import nltk
 import os
 
@@ -22,15 +23,18 @@ except LookupError:
     print("Downloading punkt...")
     nltk.download('punkt', download_dir=nltk_data_path)
 
-# 🔥 EXTRA FIX (important for some environments)
+# ✅ IMPORTANT: Download stopwords (required for Sumy)
 try:
-    nltk.data.find('tokenizers/punkt/english.pickle')
+    nltk.data.find('corpora/stopwords')
 except LookupError:
-    nltk.download('punkt', download_dir=nltk_data_path)
+    print("Downloading stopwords...")
+    nltk.download('stopwords', download_dir=nltk_data_path)
 
+# ✅ Flask setup
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+# ✅ Your existing data
 users = {}
 notes_history = {}
 
