@@ -72,24 +72,40 @@ def generate_summary(text):
         print("SUMMARY ERROR:", e)
         return "Unable to generate summary."
 # 🔹 AI FUNCTION
-def generate_ai_info(text):
-    if not text.strip():
-        return "No text provided."
 
-    sentences = text.split(".")
-    key_points = [s.strip() for s in sentences if len(s.strip()) > 20][:3]
+def generate_summary(text):
+    try:
+        # ✅ Step 1: Handle empty / short text
+        if not text or len(text.split()) < 20:
+            return "Text too short to summarize."
 
-    result = "📌 Key Points:\n"
-    for i, point in enumerate(key_points, 1):
-        result += f"{i}. {point}\n"
+        from sumy.parsers.plaintext import PlaintextParser
+        from sumy.nlp.tokenizers import Tokenizer
+        from sumy.summarizers.lsa import LsaSummarizer
 
-    result += "\n🧠 Explanation:\n"
-    result += "This content explains the topic in a simplified manner by focusing on the important concepts and how they are applied."
+        parser = PlaintextParser.from_string(text, Tokenizer("english"))
+        summarizer = LsaSummarizer()
 
-    result += "\n\n📖 Conclusion:\n"
-    result += "Overall, it helps in understanding the concept clearly and quickly revising key ideas."
+        # ✅ Step 2: Try summarization
+        summary_sentences = summarizer(parser.document, 1)
+        summary = " ".join(str(sentence) for sentence in summary_sentences)
 
-    return result
+        # ✅ Step 3: If summary empty → fallback
+        if not summary.strip():
+            raise ValueError("Empty summary")
+
+        # ✅ Step 4: Limit size
+        return " ".join(summary.split()[:50]) + "..."
+
+    except Exception as e:
+        print("SUMMARY ERROR:", e)
+
+        # 🔥 FINAL FALLBACK (ALWAYS WORKS)
+        sentences = text.split('.')
+        if len(sentences) > 1:
+            return sentences[0] + "."
+        else:
+            return text
 
 # 🔹 Home
 @app.route('/', methods=['GET'])
