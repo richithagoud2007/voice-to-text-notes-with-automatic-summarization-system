@@ -219,24 +219,29 @@ recognition.onend = function() {
     }
 };
 
-// 🤖 AI
+
 function getAIInfo() {
-    if (!finalText.trim()) {
+    if (!finalText || !finalText.trim()) {
         document.getElementById("aiOutput").innerText = "No text available";
         return;
     }
 
     fetch("/ai-info", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify({ text: finalText })
     })
     .then(res => res.json())
     .then(data => {
-        document.getElementById("aiOutput").innerText = data.info;
+        document.getElementById("aiOutput").innerText = data.info || "No explanation generated";
+    })
+    .catch(err => {
+        console.error("AI ERROR:", err);
+        document.getElementById("aiOutput").innerText = "Error getting explanation";
     });
 }
-
 // 📄 TXT
 function downloadTXT() {
     let text = document.getElementById("output").innerText;

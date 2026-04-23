@@ -34,6 +34,23 @@ except LookupError:
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+@app.route('/ai-info', methods=['POST'])
+def ai_info():
+    try:
+        data = request.get_json()
+        text = data.get('text')
+
+        if not text:
+            return jsonify({"info": "No text provided"})
+
+        explanation = "This text is about: " + text[:150] + "..."
+
+        return jsonify({"info": explanation})
+
+    except Exception as e:
+        print("AI ERROR:", e)
+        return jsonify({"info": "Unable to generate explanation"})
+
 # ✅ Your existing data
 users = {}
 notes_history = {}
@@ -175,11 +192,22 @@ def summarize():
         print("🔥 FULL ERROR:", str(e))  # ✅ IMPORTANT
         return jsonify({"summary": "Error generating summary"})
 # 🔹 AI Info API
-@app.route("/ai-info", methods=["POST"])
-def ai_info():
-    data = request.get_json()
-    text = data.get("text", "")
-    return jsonify({"info": generate_ai_info(text)})
+@app.route('/explain', methods=['POST'])
+def explain():
+    try:
+        text = request.form.get('text')
+
+        if not text or text.strip() == "":
+            return "No text provided for explanation."
+
+        # 🔥 Simple explanation logic (safe fallback)
+        explanation = "This text explains about: " + text[:150] + "..."
+
+        return explanation
+
+    except Exception as e:
+        print("EXPLANATION ERROR:", e)
+        return "Unable to generate explanation."
 
 # 🔹 History
 @app.route("/history")
