@@ -40,17 +40,31 @@ notes_history = {}
 
 # 🔹 Summarization
 def generate_summary(text):
-    if not text.strip():
-        return "No text to summarize"
+    try:
+        # 🔴 Fix 1: Handle empty or very short text
+        if not text or len(text.split()) < 8:
+            return text  # return original instead of failing
 
-    parser = PlaintextParser.from_string(text, Tokenizer("english"))
-    summarizer = LsaSummarizer()
+        from sumy.parsers.plaintext import PlaintextParser
+        from sumy.nlp.tokenizers import Tokenizer
+        from sumy.summarizers.lsa import LsaSummarizer
 
-    summary = summarizer(parser.document, 2)
-    result = " ".join(str(sentence) for sentence in summary)
+        parser = PlaintextParser.from_string(text, Tokenizer("english"))
+        summarizer = LsaSummarizer()
 
-    return result if result else "Summary not available"
+        summary_sentences = summarizer(parser.document, 2)
 
+        summary = " ".join([str(sentence) for sentence in summary_sentences])
+
+        # 🔴 Fix 2: If summary is empty, return original
+        if not summary.strip():
+            return text
+
+        return summary
+
+    except Exception as e:
+        print("SUMMARY ERROR:", e)
+        return text  # fallback instead of error
 # 🔹 AI FUNCTION
 def generate_ai_info(text):
     if not text.strip():
