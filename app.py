@@ -41,30 +41,36 @@ notes_history = {}
 # 🔹 Summarization
 def generate_summary(text):
     try:
-        # 🔴 Fix 1: Handle empty or very short text
-        if not text or len(text.split()) < 8:
-            return text  # return original instead of failing
-
         from sumy.parsers.plaintext import PlaintextParser
         from sumy.nlp.tokenizers import Tokenizer
         from sumy.summarizers.lsa import LsaSummarizer
 
+        # 🔴 Clean text (important)
+        text = text.replace("\n", " ")
+
+        # 🔴 If text too short
+        if len(text.split()) < 20:
+            return "Text too short to summarize."
+
         parser = PlaintextParser.from_string(text, Tokenizer("english"))
         summarizer = LsaSummarizer()
 
-        summary_sentences = summarizer(parser.document, 2)
+        # 🔥 Dynamic summary length
+        sentence_count = max(1, len(text.split()) // 40)
 
-        summary = " ".join([str(sentence) for sentence in summary_sentences])
+        summary = summarizer(parser.document, sentence_count)
 
-        # 🔴 Fix 2: If summary is empty, return original
-        if not summary.strip():
-            return text
+        result = " ".join([str(sentence) for sentence in summary])
 
-        return summary
+        # 🔴 If still too long → cut manually
+        if len(result.split()) > 50:
+            result = " ".join(result.split()[:50]) + "..."
+
+        return result
 
     except Exception as e:
         print("SUMMARY ERROR:", e)
-        return text  # fallback instead of error
+        return "Unable to generate summary."
 # 🔹 AI FUNCTION
 def generate_ai_info(text):
     if not text.strip():
